@@ -1,0 +1,2 @@
+# Hysteria Shooter
+This is a clone of [Panic Shooter](https://ochacha.itch.io/panic-shooter), but (hopefully eventually) with some additional features and less buggy on my system. It is compatible with the level files from the original Panic Shooter. The level are not included in the distribution for licensing reasons, but you can get them from either download [here](https://ochacha.itch.io/panic-shooter/purchase).
