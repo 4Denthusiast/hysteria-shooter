@@ -1,14 +1,13 @@
 name:                hysteria-shooter
 version:             0.1.0.0
-github:              "githubuser/hysteria-shooter"
-license:             BSD3
-author:              "Author name here"
+github:              "4Denthusiast/hysteria-shooter"
+license:             CC-BY-4.0
+author:              "4D enthusiast"
 maintainer:          "example@example.com"
-copyright:           "2021 Author name here"
+copyright:           "2021 4D enthusiast"
 
 extra-source-files:
 - README.md
-- ChangeLog.md
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
@@ -17,10 +16,12 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/githubuser/hysteria-shooter#readme>
+description:         Please see the README on GitHub at <https://github.com/4Denthusiast/hysteria-shooter#readme>
 
 dependencies:
 - base >= 4.7 && < 5
+- gtk >= 0.15.5
+- mtl
 
 library:
   source-dirs: src
