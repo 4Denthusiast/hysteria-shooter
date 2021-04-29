@@ -28,7 +28,7 @@ data GameState = GameState WrapMode GridState [PlayerState]
 
 stepGame :: [Input] -> GameState -> GameState
 stepGame inputs (GameState mode grid players) = GameState mode grid' players'
-    where grid' = foldr addShot (stepGrid mode grid) (zip inputs players)
+    where grid' = stepGrid mode $ foldr addShot grid (zip inputs players)
           players' = zipWith (stepPlayer grid') inputs players
 
 directionX, directionY :: Direction -> Int
@@ -53,8 +53,8 @@ addShot (Shoot, p@PlayerState{playerX = px, playerY = py, facing = d, reloadTime
 addShot _ grid = grid
 
 stepPlayer :: GridState -> Input -> PlayerState -> PlayerState
-stepPlayer grid input p = if isDead p then p else hurt $ move $ recharge p
-    where recharge player = player{reloadTime = if reloadTime player > 0 then reloadTime player - 1 else if input == Shoot then 10 else 0}
+stepPlayer grid input p = if isDead p then p else move $ hurt $ recharge p
+    where recharge player = player{reloadTime = if reloadTime player > 0 then reloadTime player - 1 else if input == Shoot then 11 else 0}
           move player@PlayerState{facing = prevDirection} = case input of
               Move newDirection -> if newDirection /= prevDirection then player{facing = newDirection} else if
                       (aliveCount grid (aheadRectangle player) == 0) && case prevDirection of

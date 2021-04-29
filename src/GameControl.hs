@@ -1,6 +1,8 @@
 module GameControl (
+    InputState,
     registerKeyStateListeners,
     redrawCanvas,
+    initialiseGame,
     tick
 ) where
 
@@ -58,6 +60,9 @@ redrawCanvas drawingArea gameRef = do
     drawWindowBeginPaintRect drawWindow (Rectangle 0 0 w h)
     drawGameState (toDrawable drawWindow) game
     drawWindowEndPaint drawWindow
+
+initialiseGame :: GameState -> [[Float]] -> GameState
+initialiseGame (GameState mode grid [player]) colors = GameState mode grid $ map (\c -> player{playerColor = c}) colors
 
 tick :: IORef InputState -> IORef GameState -> DrawingArea -> IO ()
 tick inputRef gameRef drawingArea = do

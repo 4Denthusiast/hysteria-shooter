@@ -6,8 +6,8 @@ import qualified Data.Set as S
 import Data.Text (unpack)
 import Graphics.UI.Gtk
 
-import Lib
 import GameControl
+import MenuSystem
 
 main :: IO ()
 main = do
@@ -17,10 +17,6 @@ main = do
     windowSetDefaultSize window 512 512
     on window deleteEvent (liftIO mainQuit >> return False)
     keyboardState <- registerKeyStateListeners window
-    canvas <- drawingAreaNew
-    gameState <- newIORef testGame
-    on canvas exposeEvent (liftIO $ redrawCanvas canvas gameState >> return False)
-    timeoutAdd (tick keyboardState gameState canvas >> return True) 80
-    containerAdd window canvas
+    mainMenu window keyboardState
     widgetShowAll window
     mainGUI

@@ -1,2 +1,4 @@
 .stack-work/
+hysteria-shooter.cabal
+stack.yaml.lock
 *~
