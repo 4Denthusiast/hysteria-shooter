@@ -12,4 +12,4 @@ import Game
 import Display
 
 testGame :: GameState
-testGame = GameState Wrap (emptyGrid 99 99) [PlayerState 4 4 Right 0 0 [0,1,0]]
+testGame = GameState Wrap (emptyGrid 99 99) [PlayerState 4 4 Right 0 20 [0,1,0]]

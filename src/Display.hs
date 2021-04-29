@@ -2,18 +2,37 @@ module Display (
     drawGameState
 ) where
 
+import Data.List
 import Data.Word
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.Gdk.GC (gcNewWithValues, gcSetValues, newGCValues, foreground)
+import Prelude hiding (Left, Right)
 
 import Automaton
 import Game
 
 drawGameState :: Drawable -> GameState -> IO ()
-drawGameState canvas (GameState _ grid _) = do
+drawGameState canvas (GameState _ grid players) = do
     (csx, csy) <- drawableGetSize canvas
-    let drawCell x y s = drawGridCell canvas (csx,csy) (length (head grid), length grid) x y (cellColor s)
-    mapM_ (\(row, y) -> mapM (\(s, x) -> drawCell x y s) (zip row [0..])) (zip grid [0..])
+    let drawCell x y c = drawGridCell canvas (csx,csy) (length (head grid), length grid) x y c
+    let colorGrid = foldr drawPlayer (map (map cellColor) grid) players
+    mapM_ (\(row, y) -> mapM (\(s, x) -> drawCell x y s) (zip row [0..])) (zip colorGrid [0..])
+
+drawPlayer :: PlayerState -> [[Color]] -> [[Color]]
+drawPlayer p@PlayerState{playerX = x, playerY = y, facing = d, playerColor = c} = if isDead p then id else setGridCells (x-2) (y-2) img
+    where img = case d of
+              Up -> img0
+              Down -> reverse img0
+              Left -> transpose img0
+              Right -> transpose $ reverse img0
+          img0 = [[c3,c0,c0,c3],
+                  [c0,c1,c1,c0],
+                  [c1,c2,c2,c1],
+                  [c2,c3,c3,c2]]
+          c0 = encodeColor $ c
+          c1 = encodeColor $ map (*0.6) c
+          c2 = encodeColor $ map (*0.3) c
+          c3 = encodeColor $ [0,0,0]
 
 drawGridCell :: Drawable -> (Int, Int) -> (Int, Int) -> Int -> Int -> Color -> IO ()
 drawGridCell canvas (csx, csy) (gsx, gsy) x y c = do

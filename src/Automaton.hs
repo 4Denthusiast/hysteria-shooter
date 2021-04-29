@@ -3,7 +3,7 @@ module Automaton (
     GridState,
     WrapMode(..),
     editGrid,
-    setGridCell,
+    setGridCells,
     emptyGrid,
     stepGrid,
     stepMultiple
@@ -18,14 +18,14 @@ type GridState = [[CellState]]
 
 data WrapMode = Wrap | NoWrap
 
-editList :: (a -> a) -> Int -> [a] -> [a]
-editList f n xs = let (l, x:r) = splitAt n xs in l ++ (f x : r)
+editList :: Int -> [a -> a] -> [a] -> [a]
+editList n fs xs = let (l, r) = splitAt n xs in l ++ zipWith id (fs ++ repeat id) r
 
-editGrid :: (CellState -> CellState) -> Int -> Int -> GridState -> GridState
-editGrid f x y = editList (editList f x) y
+editGrid :: Int -> Int -> [[a -> a]] -> [[a]] -> [[a]]
+editGrid x y fss = editList y (map (editList x) fss)
 
-setGridCell :: CellState -> Int -> Int -> GridState -> GridState
-setGridCell = editGrid . const
+setGridCells :: Int -> Int -> [[a]] -> [[a]] -> [[a]]
+setGridCells x y = editGrid x y . map (map const)
 
 emptyGrid :: Int -> Int -> GridState
 emptyGrid x y = replicate y $ replicate x Dead

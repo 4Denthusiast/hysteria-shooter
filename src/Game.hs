@@ -3,7 +3,8 @@ module Game (
     PlayerState(..),
     Input(..),
     GameState(..),
-    stepGame
+    stepGame,
+    isDead
 ) where
 
 import Automaton
@@ -38,17 +39,21 @@ directionY Up = -1
 directionY Down = 1
 directionY _ = 0
 
+isDead :: PlayerState -> Bool
+isDead = (<= 0) . playerHealth
+
 addShot :: (Input, PlayerState) -> GridState -> GridState
-addShot (Shoot, PlayerState{playerX = px, playerY = py, facing = d, reloadTime = 0}) grid =
-    setGridCell Alive (px + min 2 (directionX d * 3)) (py + min 2 (directionY d * 3)) $
-    setGridCell Alive (px + min 2 (directionX d * 3) - abs (directionY d)) (py + min 2 (directionY d * 3) - abs (directionX d)) $
-    setGridCell Dying1 (px + min 1 (directionX d * 2)) (py + min 1 (directionY d * 2)) $
-    setGridCell Dying1 (px + min 1 (directionX d * 2) - abs (directionY d)) (py + min 1 (directionY d * 2) - abs (directionX d)) $
-    grid
+addShot (Shoot, p@PlayerState{playerX = px, playerY = py, facing = d, reloadTime = 0}) grid | not (isDead p) =
+    setGridCells (px + directionX d - 1) (py + directionY d - 1) (case d of
+        Up -> [[Alive, Alive], [Dying1, Dying1]]
+        Down -> [[Dying1, Dying1], [Alive, Alive]]
+        Left -> [[Alive, Dying1], [Alive, Dying1]]
+        Right -> [[Dying1, Alive], [Dying1, Alive]]
+    ) grid
 addShot _ grid = grid
 
 stepPlayer :: GridState -> Input -> PlayerState -> PlayerState
-stepPlayer grid input = hurt . move . recharge
+stepPlayer grid input p = if isDead p then p else hurt $ move $ recharge p
     where recharge player = player{reloadTime = if reloadTime player > 0 then reloadTime player - 1 else if input == Shoot then 10 else 0}
           move player@PlayerState{facing = prevDirection} = case input of
               Move newDirection -> if newDirection /= prevDirection then player{facing = newDirection} else if
@@ -61,7 +66,7 @@ stepPlayer grid input = hurt . move . recharge
                   else player
               _ -> player
           hurt player@PlayerState{playerX = px, playerY = py} = player{playerHealth = playerHealth player - aliveCount grid (px-2, py-2, 4, 4)}
-          aheadRectangle player@PlayerState{playerX = x, playerY = y, facing = d} = (x + directionX d - 2 + max 0 (directionX d) * 4, y + directionY d - 2 + max 0 (directionY d) * 4, 1 + 3 * abs (directionY d), 1 + 3 * abs (directionX d))
+          aheadRectangle player@PlayerState{playerX = x, playerY = y, facing = d} = (x + directionX d - 2 + max 0 (directionX d) * 3, y + directionY d - 2 + max 0 (directionY d) * 3, 1 + 3 * abs (directionY d), 1 + 3 * abs (directionX d))
 
 aliveCount :: GridState -> (Int, Int, Int, Int) -> Int
 aliveCount grid (x, y, w, h) = length $ filter (Alive ==) $ concatMap (take w . drop x) $ take h $ drop y $ grid
