@@ -3,6 +3,7 @@ module GameControl (
     registerKeyStateListeners,
     redrawCanvas,
     initialiseGame,
+    keyDown,
     tick
 ) where
 
@@ -39,17 +40,19 @@ registerKeyStateListeners widget = do
 
 decodeInput :: InputState -> Input
 decodeInput state =
-         if keyDown "w" then Move Up
-    else if keyDown "Up" then Move Up
-    else if keyDown "a" then Move Left
-    else if keyDown "Left" then Move Left
-    else if keyDown "s" then Move Down
-    else if keyDown "Down" then Move Down
-    else if keyDown "d" then Move Right
-    else if keyDown "Right" then Move Right
-    else if keyDown "space" then Shoot
+         if keyDown state "w" then Move Up
+    else if keyDown state "Up" then Move Up
+    else if keyDown state "a" then Move Left
+    else if keyDown state "Left" then Move Left
+    else if keyDown state "s" then Move Down
+    else if keyDown state "Down" then Move Down
+    else if keyDown state "d" then Move Right
+    else if keyDown state "Right" then Move Right
+    else if keyDown state "space" then Shoot
     else Noop
-    where keyDown name = S.member (keyFromName (pack name)) state
+
+keyDown :: InputState -> String -> Bool
+keyDown state name = S.member (keyFromName (pack name)) state
 
 redrawCanvas :: DrawingArea -> IORef GameState -> IO ()
 redrawCanvas drawingArea gameRef = do
@@ -62,10 +65,13 @@ redrawCanvas drawingArea gameRef = do
     drawWindowEndPaint drawWindow
 
 initialiseGame :: GameState -> [[Float]] -> GameState
-initialiseGame (GameState mode grid [player]) colors = GameState mode grid $ map (\c -> player{playerColor = c}) colors
+initialiseGame (GameState mode goal grid [player]) colors = GameState mode goal grid $ map (\c -> player{playerColor = c}) colors
 
-tick :: IORef InputState -> IORef GameState -> DrawingArea -> IO ()
-tick inputRef gameRef drawingArea = do
+tick :: IORef InputState -> IORef GameState -> GameState -> DrawingArea -> IO ()
+tick inputRef gameRef gameStart drawingArea = do
     input <- decodeInput <$> readIORef inputRef
     modifyIORef gameRef $ stepGame [input]
+    died <- (\(GameState _ _ _ ps) -> any isDead ps) <$> readIORef gameRef
+    enter <- flip keyDown "Return" <$> readIORef inputRef
+    if died && enter then writeIORef gameRef gameStart else return ()
     redrawCanvas drawingArea gameRef

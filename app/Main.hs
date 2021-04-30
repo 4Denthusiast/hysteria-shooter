@@ -15,8 +15,8 @@ main = do
     window <- windowNew
     windowSetTitle window "Hysteria Shooter"
     windowSetDefaultSize window 512 512
+    widgetModifyBg window StateNormal (Color 0 0 0)
     on window deleteEvent (liftIO mainQuit >> return False)
     keyboardState <- registerKeyStateListeners window
     mainMenu window keyboardState
-    widgetShowAll window
     mainGUI

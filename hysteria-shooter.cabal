@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b1aff56e5152281f107345bb87f33a9ad6f14b2f6acb7bf4b9529100949f8f6f
+-- hash: c57b2ded28dfe5cc793b932a54bb00ef5c404d2d6cbd1869d7f6692145ee663f
 
 name:           hysteria-shooter
 version:        0.1.0.0
@@ -30,7 +30,8 @@ library
       Display
       Game
       GameControl
-      Lib
+      MapLoading
+      MenuSystem
   other-modules:
       Paths_hysteria_shooter
   hs-source-dirs:
@@ -38,6 +39,8 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
+    , directory
+    , filepath
     , gtk >=0.15.5
     , mtl
     , text
@@ -53,6 +56,8 @@ executable hysteria-shooter-exe
   build-depends:
       base >=4.7 && <5
     , containers
+    , directory
+    , filepath
     , gtk >=0.15.5
     , hysteria-shooter
     , mtl
@@ -70,6 +75,8 @@ test-suite hysteria-shooter-test
   build-depends:
       base >=4.7 && <5
     , containers
+    , directory
+    , filepath
     , gtk >=0.15.5
     , hysteria-shooter
     , mtl
