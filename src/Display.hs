@@ -1,5 +1,6 @@
 module Display (
-    drawGameState
+    drawGameState,
+    encodeColor
 ) where
 
 import Data.List

@@ -67,11 +67,14 @@ redrawCanvas drawingArea gameRef = do
 initialiseGame :: GameState -> [[Float]] -> GameState
 initialiseGame (GameState mode goal grid [player]) colors = GameState mode goal grid $ map (\c -> player{playerColor = c}) colors
 
-tick :: IORef InputState -> IORef GameState -> GameState -> DrawingArea -> IO ()
-tick inputRef gameRef gameStart drawingArea = do
+tick :: IORef InputState -> IORef GameState -> GameState -> DrawingArea -> Label -> IO ()
+tick inputRef gameRef gameStart drawingArea healthLabel = do
     input <- decodeInput <$> readIORef inputRef
     modifyIORef gameRef $ stepGame [input]
-    died <- (\(GameState _ _ _ ps) -> any isDead ps) <$> readIORef gameRef
+    game <- readIORef gameRef
+    let died = (\(GameState _ _ _ ps) -> any isDead ps) game
     enter <- flip keyDown "Return" <$> readIORef inputRef
     if died && enter then writeIORef gameRef gameStart else return ()
+    let [health] = (\(GameState _ _ _ ps) -> map playerHealth ps) game
+    labelSetText healthLabel ("Player:\n"++ if health <= 0 then "Dead" else show health ++ "HP")
     redrawCanvas drawingArea gameRef

@@ -6,6 +6,7 @@ import Control.Monad.Trans
 import Data.Char
 import Data.IORef
 import Data.List
+import Data.Text (Text)
 import Graphics.UI.Gtk
 import Text.Read
 import System.Directory
@@ -13,6 +14,7 @@ import System.FilePath
 
 import Game
 import MapLoading
+import Display
 import GameControl
 
 clearWindow :: Window -> IO ()
@@ -77,16 +79,19 @@ startSingleplayer :: Window -> IORef InputState -> GameState -> IO () -> IO ()
 startSingleplayer window keyboardState gameTemplate nextLevel = do
     clearWindow window
     box <- vBoxNew False 0
+    containerAdd window box
+    healthLabel <- labelNew (Nothing :: Maybe Text)
+    boxPackStart box healthLabel PackNatural 5
+    widgetModifyFg healthLabel StateNormal (encodeColor [0,1,0])
     aspectFrame <- aspectFrameNew 0.5 0.5 (Just 1)
     frameSetShadowType aspectFrame ShadowNone
     canvas <- drawingAreaNew
-    containerAdd window box
     containerAdd box aspectFrame
     containerAdd aspectFrame canvas
     let gameStart = initialiseGame gameTemplate [[0,1,0]]
     gameState <- newIORef gameStart
     on canvas exposeEvent (liftIO $ redrawCanvas canvas gameState >> return False)
-    timeoutAdd (tick keyboardState gameState gameStart canvas >> (not <$> checkWon keyboardState gameState nextLevel)) 80
+    timeoutAdd (tick keyboardState gameState gameStart canvas healthLabel >> (not <$> checkWon keyboardState gameState nextLevel)) 80
     widgetShowAll window
 
 checkWon :: IORef InputState -> IORef GameState -> IO () -> IO Bool
