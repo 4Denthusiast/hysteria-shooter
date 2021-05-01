@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 module Game (
     Direction(..),
     PlayerState(..),
@@ -7,11 +8,13 @@ module Game (
     isDead
 ) where
 
-import Automaton
-
+import Data.Bytes.Serial
+import GHC.Generics
 import Prelude hiding (Left, Right)
 
-data Direction = Up | Down | Left | Right deriving (Eq)
+import Automaton
+
+data Direction = Up | Down | Left | Right deriving (Eq, Generic, Serial)
 
 data PlayerState = PlayerState {
     playerX :: Int,
@@ -20,11 +23,11 @@ data PlayerState = PlayerState {
     reloadTime :: Int,
     playerHealth :: Int,
     playerColor :: [Float]
-}
+} deriving (Eq, Generic, Serial)
 
-data Input = Noop | Shoot | Proceed | Move Direction deriving (Eq)
+data Input = Noop | Shoot | Proceed | Move Direction deriving (Eq, Generic, Serial)
 
-data GameState = GameState WrapMode (Int, Int, Int, Int) GridState [PlayerState]
+data GameState = GameState WrapMode (Int, Int, Int, Int) GridState [PlayerState] deriving (Eq, Generic, Serial)
 
 stepGame :: [Input] -> GameState -> GameState
 stepGame inputs (GameState mode goal grid players) = GameState mode goal grid' players'

@@ -92,7 +92,7 @@ startSingleplayer window keyboardState gameTemplate nextLevel = do
     gameState <- newIORef gameStart
     modifyIORef keyboardState clearInputQueue
     on canvas exposeEvent (liftIO $ redrawCanvas canvas gameState >> return False)
-    timeoutAdd (tick keyboardState gameState gameStart canvas healthLabel >> (not <$> checkWon keyboardState gameState nextLevel)) 80
+    timeoutAdd (tick keyboardState gameState gameStart canvas healthLabel >> (not <$> checkWon keyboardState gameState nextLevel)) 60
     widgetShowAll window
 
 checkWon :: IORef InputState -> IORef GameState -> IO () -> IO Bool
