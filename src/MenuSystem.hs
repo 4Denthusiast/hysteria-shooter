@@ -90,6 +90,7 @@ startSingleplayer window keyboardState gameTemplate nextLevel = do
     containerAdd aspectFrame canvas
     let gameStart = initialiseGame gameTemplate [[0,1,0]]
     gameState <- newIORef gameStart
+    modifyIORef keyboardState clearInputQueue
     on canvas exposeEvent (liftIO $ redrawCanvas canvas gameState >> return False)
     timeoutAdd (tick keyboardState gameState gameStart canvas healthLabel >> (not <$> checkWon keyboardState gameState nextLevel)) 80
     widgetShowAll window

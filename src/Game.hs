@@ -22,7 +22,7 @@ data PlayerState = PlayerState {
     playerColor :: [Float]
 }
 
-data Input = Noop | Shoot | Move Direction deriving (Eq)
+data Input = Noop | Shoot | Proceed | Move Direction deriving (Eq)
 
 data GameState = GameState WrapMode (Int, Int, Int, Int) GridState [PlayerState]
 
