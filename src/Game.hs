@@ -14,7 +14,7 @@ import Prelude hiding (Left, Right)
 
 import Automaton
 
-data Direction = Up | Down | Left | Right deriving (Eq, Generic, Serial)
+data Direction = Up | Down | Left | Right deriving (Eq, Generic, Serial, Show)
 
 data PlayerState = PlayerState {
     playerX :: Int,
@@ -23,11 +23,11 @@ data PlayerState = PlayerState {
     reloadTime :: Int,
     playerHealth :: Int,
     playerColor :: [Float]
-} deriving (Eq, Generic, Serial)
+} deriving (Eq, Generic, Serial, Show)
 
-data Input = Noop | Shoot | Proceed | Move Direction deriving (Eq, Generic, Serial)
+data Input = Noop | Shoot | Proceed | Move Direction deriving (Eq, Generic, Serial, Show)
 
-data GameState = GameState WrapMode (Int, Int, Int, Int) GridState [PlayerState] deriving (Eq, Generic, Serial)
+data GameState = GameState WrapMode (Int, Int, Int, Int) GridState [PlayerState] deriving (Eq, Generic, Serial, Show)
 
 stepGame :: [Input] -> GameState -> GameState
 stepGame inputs (GameState mode goal grid players) = GameState mode goal grid' players'

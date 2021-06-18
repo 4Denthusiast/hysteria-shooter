@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 module Automaton (
     CellState(..),
     GridState,
@@ -9,14 +10,16 @@ module Automaton (
     stepMultiple
 ) where
 
+import Data.Bytes.Serial
 import Data.List
+import GHC.Generics
 
-data CellState = Alive | Dying1 | Dying2 | Dead deriving (Eq)
+data CellState = Alive | Dying1 | Dying2 | Dead deriving (Eq, Generic, Serial, Show)
 
 -- GridStates are additionally assumed to be rectangular.
 type GridState = [[CellState]]
 
-data WrapMode = Wrap | NoWrap
+data WrapMode = Wrap | NoWrap deriving (Eq, Generic, Serial, Show)
 
 editList :: Int -> [a -> a] -> [a] -> [a]
 editList n fs xs = let (l, r) = splitAt n xs in l ++ zipWith id (fs ++ repeat id) r

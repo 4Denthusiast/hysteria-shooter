@@ -1,6 +1,7 @@
 module GameControl (
     InputState,
     registerKeyStateListeners,
+    decodeInput,
     redrawCanvas,
     initialiseGame,
     keyDown,

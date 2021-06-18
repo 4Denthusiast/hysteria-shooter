@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c57b2ded28dfe5cc793b932a54bb00ef5c404d2d6cbd1869d7f6692145ee663f
+-- hash: 3449feb6021e5b89263994d9a7cee1dd448c5d16cf8e47c1fbad2688892f3e56
 
 name:           hysteria-shooter
 version:        0.1.0.0
@@ -32,18 +32,49 @@ library
       GameControl
       MapLoading
       MenuSystem
+      Multiplayer
+      Server
   other-modules:
       Paths_hysteria_shooter
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5
+    , bytes
+    , bytestring
+    , clock
     , containers
     , directory
+    , extra
     , filepath
     , gtk >=0.15.5
     , mtl
+    , network-simple
     , text
+    , transformers
+  default-language: Haskell2010
+
+executable hysteria-server
+  main-is: Main.hs
+  other-modules:
+      Paths_hysteria_shooter
+  hs-source-dirs:
+      server
+  build-depends:
+      base >=4.7 && <5
+    , bytes
+    , bytestring
+    , clock
+    , containers
+    , directory
+    , extra
+    , filepath
+    , gtk >=0.15.5
+    , hysteria-shooter
+    , mtl
+    , network-simple
+    , text
+    , transformers
   default-language: Haskell2010
 
 executable hysteria-shooter-exe
@@ -55,13 +86,19 @@ executable hysteria-shooter-exe
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , bytes
+    , bytestring
+    , clock
     , containers
     , directory
+    , extra
     , filepath
     , gtk >=0.15.5
     , hysteria-shooter
     , mtl
+    , network-simple
     , text
+    , transformers
   default-language: Haskell2010
 
 test-suite hysteria-shooter-test
@@ -74,11 +111,17 @@ test-suite hysteria-shooter-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , bytes
+    , bytestring
+    , clock
     , containers
     , directory
+    , extra
     , filepath
     , gtk >=0.15.5
     , hysteria-shooter
     , mtl
+    , network-simple
     , text
+    , transformers
   default-language: Haskell2010

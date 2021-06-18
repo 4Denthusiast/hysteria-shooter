@@ -20,12 +20,18 @@ description:         Please see the README on GitHub at <https://github.com/4Den
 
 dependencies:
 - base >= 4.7 && < 5
+- bytes
+- bytestring
+- clock
+- containers
+- directory
+- extra
+- filepath
 - gtk >= 0.15.5
 - mtl
-- containers
+- network-simple
 - text
-- directory
-- filepath
+- transformers
 
 library:
   source-dirs: src
@@ -38,6 +44,11 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    dependencies:
+    - hysteria-shooter
+  hysteria-server:
+    main:                Main.hs
+    source-dirs:         server
     dependencies:
     - hysteria-shooter
 
