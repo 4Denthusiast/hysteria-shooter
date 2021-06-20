@@ -111,10 +111,9 @@ startSingleplayer window keyboardState (gameTemplate:nextLevels) = do
 checkWon :: IORef InputState -> IORef GameState -> IO () -> IO Bool
 checkWon keyboardState gameState nextLevel = do
         enter <- flip keyDown "Return" <$> readIORef keyboardState
-        won <- (\(GameState _ goal _ ps) -> all (playerWon goal) ps) <$> readIORef gameState
+        won <- isWonState <$> readIORef gameState
         if (enter && won) then nextLevel else return ()
         return (enter && won)
-    where playerWon (gx, gy, gw, gh) PlayerState{playerX=x, playerY=y, playerHealth=h} = h > 0 && x >= gx + 2 && y >= gy + 2 && x <= gx + gw - 2 && y <= gy + gh - 2
 
 serverConnectScreen :: Window -> IORef InputState -> IO ()
 serverConnectScreen window inputRef = do
@@ -161,7 +160,7 @@ awaitOtherPlayers window inputRef sock id = do
         button <- buttonNewWithLabel "Select Level"
         containerAdd box button
         remainingLevels <- newIORef Nothing
-        onClicked button $ selectLevel $ \(firstLevel:levels) -> writeIORef remainingLevels (Just levels) >> sendNetMessage sock (StartLevel 0 firstLevel)
+        onClicked button $ selectLevel $ \levels -> writeIORef remainingLevels (Just levels) >> sendNetMessage sock (StartLevel 0 (head levels))
         forkIO $ fix (\loop colors -> do
                 messageM <- recvNetMessage sock
                 case messageM of
@@ -201,5 +200,5 @@ startMultiplayer window inputRef sock colors id level levels = do
                 Nothing -> closeSock sock
                 Just message -> modifyMVar_ stateVar (return . updateStateWithMessage id message) >> loop
         )
-    multiplayerTick window inputRef sock stateVar id gameStateRef canvas healthLabels
+    multiplayerTick window (\s -> displayMessage s >> mainMenu window inputRef) inputRef sock stateVar id gameStateRef canvas healthLabels levels
     return ()

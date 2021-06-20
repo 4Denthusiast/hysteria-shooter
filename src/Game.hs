@@ -5,7 +5,8 @@ module Game (
     Input(..),
     GameState(..),
     stepGame,
-    isDead
+    isDead,
+    isWonState
 ) where
 
 import Data.Bytes.Serial
@@ -73,3 +74,7 @@ stepPlayer grid input p = if isDead p then p else move $ hurt $ recharge p
 
 aliveCount :: GridState -> (Int, Int, Int, Int) -> Int
 aliveCount grid (x, y, w, h) = length $ filter (Alive ==) $ concatMap (take w . drop x) $ take h $ drop y $ grid
+
+isWonState :: GameState -> Bool
+isWonState (GameState _ (gx, gy, gw, gh) _ ps) = all playerWon ps
+    where playerWon PlayerState{playerX=x, playerY=y, playerHealth=h} = h > 0 && x >= gx + 2 && y >= gy + 2 && x <= gx + gw - 2 && y <= gy + gh - 2

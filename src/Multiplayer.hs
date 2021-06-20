@@ -20,6 +20,7 @@ import Data.Bytes.Serial
 import Data.Either.Extra
 import Data.IORef
 import Data.List
+import Data.Maybe
 import GHC.Generics
 import Graphics.UI.Gtk hiding (Socket)
 import Network.Simple.TCP
@@ -73,35 +74,53 @@ addInput i id iss = let (issL, is:issR) = splitAt id iss in issL ++ (is ++ [i]) 
 updateStateWithMessage :: Int -> NetMessage -> MultiplayerState -> MultiplayerState
 updateStateWithMessage id (InputFrom id' act) state = if id == id' then state else state{multiplayerInputs = addInput act id' $ multiplayerInputs state}
 updateStateWithMessage id (StartLevel tick level) state = state{multiplayerPendingLevel = Just (tick, level)}
-updateStateWithMessage _ _ _ = error "Unexpected net message."
+updateStateWithMessage _ m _ = error ("Unexpected net message: " ++ show m)
 
 guessInputs :: [Input] -> [Input]
 guessInputs (x0:x1:xs) = x0 : guessInputs (x1:xs)
 guessInputs [x] = repeat x
 guessInputs [] = error "Empty input queue."
 
-multiplayerTick :: Window -> IORef InputState -> Socket -> MVar MultiplayerState -> Int -> IORef GameState -> DrawingArea -> [Label] -> IO Bool
-multiplayerTick window inputRef sock stateVar id gameStateRef drawingArea healthLabels = do
+multiplayerTick :: Window -> (String -> IO ()) -> IORef InputState -> Socket -> MVar MultiplayerState -> Int -> IORef GameState -> DrawingArea -> [Label] -> Maybe [GameState] -> IO Bool
+multiplayerTick window end inputRef sock stateVar id gameStateRef drawingArea healthLabels remainingLevels = do
     (input, inputState) <- decodeInput <$> readIORef inputRef
     writeIORef inputRef inputState
     sendNetMessage sock $ InputFrom id input
     MultiplayerState startTime referenceState referenceTick currentTick pendingLevel inputs <- takeMVar stateVar
     let inputs' = addInput input id inputs
     let definiteInputs = takeWhile ((== length inputs) . length) $ tail $ transpose inputs'
-    let referenceState' = foldl (flip stepGame) referenceState definiteInputs
-    let referenceTick' = referenceTick + length definiteInputs
+    let definiteInputs' = case pendingLevel of
+            Nothing -> definiteInputs
+            Just (changeTick, _) -> take (changeTick - referenceTick) definiteInputs
+    let referenceState' = case pendingLevel of
+            Nothing -> foldl (flip stepGame) referenceState definiteInputs
+            Just (_, newLevel) -> initialiseGame newLevel (map playerColor $ (\(GameState _ _ _ ps) -> ps) referenceState)
+    let referenceTick' = referenceTick + length definiteInputs'
     let currentTick' = currentTick + 1
-    let guessedInputs = take (currentTick + 1 - referenceTick') $ drop (length definiteInputs + 1) $ transpose (map guessInputs inputs')
+    let guessedInputs = take (currentTick + 1 - referenceTick') $ drop (length definiteInputs' + 1) $ transpose (map guessInputs inputs')
     let guessedGameState = foldl (flip stepGame) referenceState' guessedInputs
     writeIORef gameStateRef guessedGameState
     let (GameState _ _ _ predictedPlayerStates) = guessedGameState
     forM (zip3 healthLabels predictedPlayerStates [0..]) $ \(label, PlayerState _ _ _ _ health _, id') -> labelSetText label ("P"++show id'++":\n"++ if health <= 0 then "Dead" else show health ++ "HP")
-    let inputs'' = map (drop (length definiteInputs)) inputs'
-    putMVar stateVar $ MultiplayerState startTime referenceState' referenceTick' currentTick' pendingLevel inputs''
+    let inputs'' = map (drop (length definiteInputs')) inputs'
+    let newPendingLevel = (if remainingLevels /= Nothing && pendingLevel == Nothing && input == Proceed then Just () else Nothing) >> if (\(GameState _ _ _ ps) -> any isDead ps) referenceState'
+            then Just $ head <$> remainingLevels
+            else if isWonState referenceState'
+                then (listToMaybe . tail) <$> remainingLevels
+                else Nothing
+    pendingLevel' <- case newPendingLevel of
+        Just (Just newPending) -> sendNetMessage sock (StartLevel (currentTick + levelChangeWait) newPending) >> return (Just (currentTick + levelChangeWait, newPending))
+        _ -> return $ if pendingLevel /= Nothing && fst (fromJust pendingLevel) <= referenceTick' then Nothing else pendingLevel
+    putMVar stateVar $ MultiplayerState startTime referenceState' referenceTick' currentTick' pendingLevel' inputs''
     redrawCanvas drawingArea gameStateRef
-    widgetShowAll window
+    --widgetShowAll window
     time <- getTime Monotonic
     let nextTickTime = fromNanoSecs (fromIntegral $ currentTick' * 150000000) + startTime
     let delay = max 1 $ fromInteger $ div (toNanoSecs (nextTickTime - time)) 1000000
-    timeoutAdd (multiplayerTick window inputRef sock stateVar id gameStateRef drawingArea healthLabels) delay
+    if currentTick' - referenceTick' > 30
+        then closeSock sock >> end "Falling too far behind, aborting."
+        else if newPendingLevel == Just Nothing
+            then closeSock sock >> end "You won!"
+            else timeoutAdd (multiplayerTick window end inputRef sock stateVar id gameStateRef drawingArea healthLabels remainingLevels) delay >> return ()
+    widgetShowAll window
     return False
