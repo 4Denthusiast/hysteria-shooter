@@ -103,11 +103,13 @@ multiplayerTick window end inputRef sock stateVar id gameStateRef drawingArea he
     let (GameState _ _ _ predictedPlayerStates) = guessedGameState
     forM (zip3 healthLabels predictedPlayerStates [0..]) $ \(label, PlayerState _ _ _ _ health _, id') -> labelSetText label ("P"++show id'++":\n"++ if health <= 0 then "Dead" else show health ++ "HP")
     let inputs'' = map (drop (length definiteInputs')) inputs'
-    let newPendingLevel = (if remainingLevels /= Nothing && pendingLevel == Nothing && input == Proceed then Just () else Nothing) >> if (\(GameState _ _ _ ps) -> any isDead ps) referenceState'
-            then Just $ head <$> remainingLevels
-            else if isWonState referenceState'
-                then (listToMaybe . tail) <$> remainingLevels
-                else Nothing
+    let (newPendingLevel, remainingLevels') = if remainingLevels /= Nothing && pendingLevel == Nothing && input == Proceed
+            then if (\(GameState _ _ _ ps) -> any isDead ps) referenceState'
+                then (Just $ head <$> remainingLevels, remainingLevels)
+                else if isWonState referenceState'
+                    then ((listToMaybe . tail) <$> remainingLevels, tail <$> remainingLevels)
+                    else (Nothing, remainingLevels)
+            else (Nothing, remainingLevels)
     pendingLevel' <- case newPendingLevel of
         Just (Just newPending) -> sendNetMessage sock (StartLevel (currentTick + levelChangeWait) newPending) >> return (Just (currentTick + levelChangeWait, newPending))
         _ -> return $ if pendingLevel /= Nothing && fst (fromJust pendingLevel) <= referenceTick' then Nothing else pendingLevel
@@ -115,12 +117,12 @@ multiplayerTick window end inputRef sock stateVar id gameStateRef drawingArea he
     redrawCanvas drawingArea gameStateRef
     --widgetShowAll window
     time <- getTime Monotonic
-    let nextTickTime = fromNanoSecs (fromIntegral $ currentTick' * 150000000) + startTime
+    let nextTickTime = fromNanoSecs (fromIntegral $ currentTick' * div (10^9) 15) + startTime
     let delay = max 1 $ fromInteger $ div (toNanoSecs (nextTickTime - time)) 1000000
     if currentTick' - referenceTick' > 30
         then closeSock sock >> end "Falling too far behind, aborting."
         else if newPendingLevel == Just Nothing
             then closeSock sock >> end "You won!"
-            else timeoutAdd (multiplayerTick window end inputRef sock stateVar id gameStateRef drawingArea healthLabels remainingLevels) delay >> return ()
+            else timeoutAdd (multiplayerTick window end inputRef sock stateVar id gameStateRef drawingArea healthLabels remainingLevels') delay >> return ()
     widgetShowAll window
     return False

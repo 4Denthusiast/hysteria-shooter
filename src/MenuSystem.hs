@@ -175,6 +175,7 @@ awaitOtherPlayers window inputRef sock id = do
 
 startMultiplayer :: Window -> IORef InputState -> Socket -> [[Float]] -> Int -> GameState -> Maybe [GameState] -> IO ()
 startMultiplayer window inputRef sock colors id level levels = do
+    stateVar <- newMVar =<< initialMultiplayerState level colors -- This is first because it includes recording the time.
     clearWindow window
     box <- vBoxNew False 0
     containerAdd window box
@@ -191,7 +192,6 @@ startMultiplayer window inputRef sock colors id level levels = do
     canvas <- drawingAreaNew
     containerAdd box aspectFrame
     containerAdd aspectFrame canvas
-    stateVar <- newMVar =<< initialMultiplayerState level colors
     gameStateRef <- newIORef level -- Technically this should be the initialised state, but it barely matters.
     on canvas exposeEvent (liftIO $ redrawCanvas canvas gameStateRef >> return False)
     forkIO $ fix (\loop -> do
