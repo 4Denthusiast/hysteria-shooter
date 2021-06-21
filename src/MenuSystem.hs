@@ -198,7 +198,7 @@ startMultiplayer window inputRef sock colors id level levels = do
             messageM <- recvNetMessage sock
             case messageM of
                 Nothing -> closeSock sock
-                Just message -> modifyMVar_ stateVar (return . updateStateWithMessage id message) >> loop
+                Just message -> modifyMVar_ stateVar (updateStateWithMessage id message) >> loop
         )
     multiplayerTick window (\s -> displayMessage s >> mainMenu window inputRef) inputRef sock stateVar id gameStateRef canvas healthLabels levels
     return ()

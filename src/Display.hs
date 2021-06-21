@@ -42,9 +42,7 @@ drawPlayer p@PlayerState{playerX = x, playerY = y, facing = d, playerColor = c} 
 drawGridCell :: GC -> Drawable -> (Int, Int) -> (Int, Int) -> Int -> Int -> Color -> IO ()
 drawGridCell gc canvas (csx, csy) (gsx, gsy) x y c = do
         gcSetValues gc (newGCValues{foreground = c})
-        drawRectangle canvas gc True x0 y0 (x1 - x0 - 1) (y1 - y0 - 1)
-        gcSetValues gc (newGCValues{foreground = outlineColor c})
-        drawLines canvas gc [(x0,y1-1), (x1-1,y1-1), (x1-1,y0)]
+        drawRectangle canvas gc True x0 y0 (x1 - x0) (y1 - y0)
     where x0 = div (x * csx) gsx
           x1 = div ((x+1) * csx) gsx
           y0 = div (y * csy) gsy

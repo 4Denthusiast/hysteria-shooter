@@ -30,7 +30,7 @@ import System.IO.Error
 import Game
 import GameControl
 
-data NetMessage = PlayerConnected [Float] | YourIdIs Int | ServerIsBusy | Disconnect | StartLevel Int GameState | InputFrom Int Input deriving (Eq, Generic, Serial, Show)
+data NetMessage = PlayerConnected [Float] | YourIdIs Int | ServerIsBusy | Disconnect | StartLevel Int GameState | InputFrom Int Input | TimePing Integer deriving (Eq, Generic, Serial, Show)
 
 sendNetMessage :: Socket -> NetMessage -> IO ()
 sendNetMessage sock msg = sendWithLength $ runPutS $ serialize msg
@@ -71,9 +71,13 @@ initialMultiplayerState level players = do
 addInput :: Input -> Int -> [[Input]] -> [[Input]]
 addInput i id iss = let (issL, is:issR) = splitAt id iss in issL ++ (is ++ [i]) : issR
 
-updateStateWithMessage :: Int -> NetMessage -> MultiplayerState -> MultiplayerState
-updateStateWithMessage id (InputFrom id' act) state = if id == id' then state else state{multiplayerInputs = addInput act id' $ multiplayerInputs state}
-updateStateWithMessage id (StartLevel tick level) state = state{multiplayerPendingLevel = Just (tick, level)}
+updateStateWithMessage :: Int -> NetMessage -> MultiplayerState -> IO MultiplayerState
+updateStateWithMessage id (InputFrom id' act) state = return $ if id == id' then state else state{multiplayerInputs = addInput act id' $ multiplayerInputs state}
+updateStateWithMessage id (StartLevel tick level) state = return $ state{multiplayerPendingLevel = Just (tick, level)}
+updateStateWithMessage id (TimePing rt) state@MultiplayerState{multiplayerStartTime = st} = do
+    ct <- getTime Monotonic
+    --putStrLn ("Received recommended time "++show (fromNanoSecs rt)++", current time = "++show (ct - st)++". Adjusting to "++show (ct - st + fromNanoSecs (div (rt - toNanoSecs (ct - st)) 100)))
+    return $ state{multiplayerStartTime = st - fromNanoSecs (div (rt - toNanoSecs (ct - st)) 100)}
 updateStateWithMessage _ m _ = error ("Unexpected net message: " ++ show m)
 
 guessInputs :: [Input] -> [Input]
@@ -119,6 +123,7 @@ multiplayerTick window end inputRef sock stateVar id gameStateRef drawingArea he
     time <- getTime Monotonic
     let nextTickTime = fromNanoSecs (fromIntegral $ currentTick' * div (10^9) 15) + startTime
     let delay = max 1 $ fromInteger $ div (toNanoSecs (nextTickTime - time)) 1000000
+    sendNetMessage sock $ TimePing $ toNanoSecs $ time - startTime
     if currentTick' - referenceTick' > 30
         then closeSock sock >> end "Falling too far behind, aborting."
         else if newPendingLevel == Just Nothing

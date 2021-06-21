@@ -6,6 +6,7 @@ import qualified Data.Set as S
 import Data.Text (unpack)
 import Graphics.UI.Gtk
 
+import Display
 import GameControl
 import MenuSystem
 
@@ -15,7 +16,8 @@ main = do
     window <- windowNew
     windowSetTitle window "Hysteria Shooter"
     windowSetDefaultSize window 512 512
-    widgetModifyBg window StateNormal (Color 0 0 0)
+    widgetModifyBg window StateNormal $ encodeColor [0.15, 0.15, 0.2]
+    widgetModifyFg window StateNormal $ encodeColor [1, 1, 1]
     on window deleteEvent (liftIO mainQuit >> return False)
     keyboardState <- registerKeyStateListeners window
     mainMenu window keyboardState
