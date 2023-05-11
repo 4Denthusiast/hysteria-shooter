@@ -27,7 +27,7 @@ parseLines (width:height:px:py:health:gx:gy:gWidth:gHeight:wrap:gridData) = do
         "1" -> Just Wrap
         _ -> Nothing
     grid <- splitInto width' height' =<< mapM parseCell (concat gridData)
-    return $ GameState wrap' (gx', gy', gWidth', gHeight') grid [PlayerState px' py' Up 0 health' [1,1,1]]
+    return $ GameState wrap' (gx', gy', gWidth', gHeight') grid [PlayerState px' py' Up 0 health' [1,1,1]] Unpaused
 
 parseCell :: Char -> Maybe CellState
 parseCell '0' = Just Dead

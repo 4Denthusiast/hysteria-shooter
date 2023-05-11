@@ -3,6 +3,7 @@ module Game (
     Direction(..),
     PlayerState(..),
     Input(..),
+    PauseState(..),
     GameState(..),
     stepGame,
     isDead,
@@ -26,14 +27,24 @@ data PlayerState = PlayerState {
     playerColor :: [Float]
 } deriving (Eq, Generic, Serial, Show)
 
-data Input = Noop | Shoot | Proceed | Move Direction deriving (Eq, Generic, Serial, Show)
+data Input = Noop | Shoot | Proceed | Move Direction | Pause deriving (Eq, Generic, Serial, Show)
 
-data GameState = GameState WrapMode (Int, Int, Int, Int) GridState [PlayerState] deriving (Eq, Generic, Serial, Show)
+data PauseState = Unpaused | Pausing | Paused | Unpausing deriving (Eq, Generic, Serial, Show) -- So that pausing can be dealt with by the same input system as the other inputs, which repeat, it needs this extra information over just paused/unpaused.
+
+data GameState = GameState WrapMode (Int, Int, Int, Int) GridState [PlayerState] PauseState deriving (Eq, Generic, Serial, Show)
 
 stepGame :: [Input] -> GameState -> GameState
-stepGame inputs (GameState mode goal grid players) = GameState mode goal grid' players'
+stepGame inputs (GameState mode goal grid players paused) = if paused == Paused || paused == Pausing
+        then GameState mode goal grid players paused'
+        else GameState mode goal grid' players' paused'
     where grid' = stepGrid mode $ foldr addShot grid (zip inputs players)
           players' = zipWith (stepPlayer grid') inputs players
+          paused' = case (any (==Pause) inputs, paused) of
+              (True, Unpaused) -> Pausing
+              (False, Pausing) -> Paused
+              (True, Paused) -> Unpausing
+              (False, Unpausing) -> Unpaused
+              (_, p) -> p
 
 directionX, directionY :: Direction -> Int
 directionX Left = -1
@@ -76,5 +87,5 @@ aliveCount :: GridState -> (Int, Int, Int, Int) -> Int
 aliveCount grid (x, y, w, h) = length $ filter (Alive ==) $ concatMap (take w . drop x) $ take h $ drop y $ grid
 
 isWonState :: GameState -> Bool
-isWonState (GameState _ (gx, gy, gw, gh) _ ps) = all playerWon ps
+isWonState (GameState _ (gx, gy, gw, gh) _ ps _) = all playerWon ps
     where playerWon PlayerState{playerX=x, playerY=y, playerHealth=h} = h > 0 && x >= gx + 2 && y >= gy + 2 && x <= gx + gw - 2 && y <= gy + gh - 2

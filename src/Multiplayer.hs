@@ -98,17 +98,17 @@ multiplayerTick window end inputRef sock stateVar id gameStateRef drawingArea he
             Just (changeTick, _) -> take (changeTick - referenceTick) definiteInputs
     let referenceState' = case pendingLevel of
             Nothing -> foldl (flip stepGame) referenceState definiteInputs
-            Just (_, newLevel) -> initialiseGame newLevel (map playerColor $ (\(GameState _ _ _ ps) -> ps) referenceState)
+            Just (_, newLevel) -> initialiseGame newLevel (map playerColor $ (\(GameState _ _ _ ps _) -> ps) referenceState)
     let referenceTick' = referenceTick + length definiteInputs'
     let currentTick' = currentTick + 1
     let guessedInputs = take (currentTick + 1 - referenceTick') $ drop (length definiteInputs' + 1) $ transpose (map guessInputs inputs')
     let guessedGameState = foldl (flip stepGame) referenceState' guessedInputs
     writeIORef gameStateRef guessedGameState
-    let (GameState _ _ _ predictedPlayerStates) = guessedGameState
+    let (GameState _ _ _ predictedPlayerStates _) = guessedGameState
     forM (zip3 healthLabels predictedPlayerStates [0..]) $ \(label, PlayerState _ _ _ _ health _, id') -> labelSetText label ("P"++show id'++":\n"++ if health <= 0 then "Dead" else show health ++ "HP")
     let inputs'' = map (drop (length definiteInputs')) inputs'
     let (newPendingLevel, remainingLevels') = if remainingLevels /= Nothing && pendingLevel == Nothing && input == Proceed
-            then if (\(GameState _ _ _ ps) -> any isDead ps) referenceState'
+            then if (\(GameState _ _ _ ps _) -> any isDead ps) referenceState'
                 then (Just $ head <$> remainingLevels, remainingLevels)
                 else if isWonState referenceState'
                     then ((listToMaybe . tail) <$> remainingLevels, tail <$> remainingLevels)

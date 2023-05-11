@@ -14,7 +14,7 @@ import Automaton
 import Game
 
 drawGameState :: Drawable -> GameState -> IO ()
-drawGameState canvas (GameState _ goal grid players) = do
+drawGameState canvas (GameState _ goal grid players _) = do
     (csx, csy) <- drawableGetSize canvas
     gc <- gcNew canvas
     let drawCell x y c = drawGridCell gc canvas (csx,csy) (length (head grid), length grid) x y c

@@ -64,6 +64,7 @@ decodeInput (InputState set queue) = (priority queueAction downAction, InputStat
           actionByKey 0xFF53 = Move Right -- Right
           actionByKey 0x020 = Shoot -- space
           actionByKey 0xFF0D = Proceed -- enter
+          actionByKey 0xff1b = Pause --escape
           actionByKey _ = Noop
 
 clearInputQueue :: InputState -> InputState
@@ -83,7 +84,7 @@ redrawCanvas drawingArea gameRef = do
     drawWindowEndPaint drawWindow
 
 initialiseGame :: GameState -> [[Float]] -> GameState
-initialiseGame (GameState mode goal grid [player]) colors = GameState mode goal grid $ map (\c -> player{playerColor = c}) colors
+initialiseGame (GameState mode goal grid [player] paused) colors = GameState mode goal grid (map (\c -> player{playerColor = c}) colors) Unpaused
 
 tick :: IORef InputState -> IORef GameState -> GameState -> DrawingArea -> Label -> IO ()
 tick inputRef gameRef gameStart drawingArea healthLabel = do
@@ -91,8 +92,8 @@ tick inputRef gameRef gameStart drawingArea healthLabel = do
     writeIORef inputRef inputState
     modifyIORef gameRef $ stepGame [input]
     game <- readIORef gameRef
-    let died = (\(GameState _ _ _ ps) -> any isDead ps) game
+    let died = (\(GameState _ _ _ ps _) -> any isDead ps) game
     if died && (input == Proceed) then writeIORef gameRef gameStart else return ()
-    let [health] = (\(GameState _ _ _ ps) -> map playerHealth ps) game
+    let [health] = (\(GameState _ _ _ ps _) -> map playerHealth ps) game
     labelSetText healthLabel ("Player:\n"++ if health <= 0 then "Dead" else show health ++ "HP")
     redrawCanvas drawingArea gameRef
